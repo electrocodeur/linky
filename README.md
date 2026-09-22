@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="PCB%20logo_PNG.png" alt="Logo du projet" width="400">
+  <img src="PCB%20logo_PNG.png" alt="Logo PCB" width="250">
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/electrocodeur">
+    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80" alt="GitHub">
+  </a>
 </p>
 
 # Module Linky → Home Assistant (MQTT)
