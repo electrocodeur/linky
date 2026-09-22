@@ -18,7 +18,7 @@ Le but est de proposer une solution simple, fiable et facilement intégrable dan
 > [!WARNING]
 > **Le projet est toujours en cours de développement.**
 >
-> Les fichiers de fabrication (Gerber, BOM, Pick & Place, etc.) ne sont **pas encore disponibles**. Ils seront publiés sur ce dépôt dès que le matériel aura été entièrement validé et testé.
+> Les fichiers de fabrication (Gerber, BOM, Pick & Place, etc.) ne sont **pas encore disponibles**. Ils seront publiés sur ce dépôt dès que le matériel aura été entièrement validé.
 
 ---
 
