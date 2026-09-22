@@ -1,0 +1,152 @@
+- id: alerte_puissance_linky
+  alias: "Alerte puissance Linky"
+  description: "Alerte dépassement puissance souscrite"
+
+  trigger:
+    - platform: template
+      value_template: >
+        {% set puissance = states('sensor.puissance_apparente_linky') | float(0) %}
+        {% set intensite = states('sensor.intensite_souscrite_isousc') | float(0) %}
+        {% set seuil = intensite * 200 * 0.88889 %}
+
+        {{ intensite > 0 and puissance > seuil }}
+
+  condition: []
+
+  action:
+    - service: notify.mobile_app_redmi_note_9_pro
+      data:
+        title: "⚠️ Alerte Linky"
+        message: >
+          Dépassement de puissance détecté.
+
+          Puissance actuelle :
+          {{ states('sensor.puissance_apparente_linky') }} VA
+
+          Intensité souscrite :
+          {{ states('sensor.intensite_souscrite_isousc') }} A
+
+          Seuil :
+          {{ (states('sensor.intensite_souscrite_isousc') | float * 200 * 0.88889) | round(0) }} VA
+
+    - service: notify.mobile_app_iphone_de_...
+      data:
+        title: "⚠️ Alerte Linky"
+        message: >
+          Dépassement de puissance détecté.
+
+          Puissance actuelle :
+          {{ states('sensor.puissance_apparente_linky') }} VA
+
+          Intensité souscrite :
+          {{ states('sensor.intensite_souscrite_isousc') }} A
+
+          Seuil :
+          {{ (states('sensor.intensite_souscrite_isousc') | float * 200 * 0.88889) | round(0) }} VA
+  mode: single
+
+
+- id: linky_hp_filter
+  alias: "Linky - Filtre HP"
+  mode: queued
+
+  trigger:
+    - platform: state
+      entity_id: sensor.index_heures_pleines
+
+  variables:
+    new: "{{ trigger.to_state.state | float(0) }}"
+    old: "{{ states('input_number.linky_hp_filtre') | float(0) }}"
+    delta: "{{ new - old }}"
+
+  condition:
+    - condition: template
+      value_template: >
+        {% if old == 0 %}
+          {{ new > 0 }}
+        {% elif new == 0 %}
+          false
+        {% elif new < old %}
+          false
+        {% elif new > old * 1.95 and new < old * 2.05 %}
+          false
+        {% elif delta > 20000 %}
+          false
+        {% else %}
+          true
+        {% endif %}
+
+  action:
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.linky_hp_filtre
+      data:
+        value: "{{ new }}"
+
+
+- id: linky_hc_filter
+  alias: "Linky - Filtre HC"
+  mode: queued
+
+  trigger:
+    - platform: state
+      entity_id: sensor.index_heures_creuses
+
+  variables:
+    new: "{{ trigger.to_state.state | float(0) }}"
+    old: "{{ states('input_number.linky_hc_filtre') | float(0) }}"
+    delta: "{{ new - old }}"
+
+  condition:
+    - condition: template
+      value_template: >
+        {% if old == 0 %}
+          {{ new > 0 }}
+        {% elif new == 0 %}
+          false
+        {% elif new < old %}
+          false
+        {% elif new > old * 1.95 and new < old * 2.05 %}
+          false
+        {% elif delta > 20000 %}
+          false
+        {% else %}
+          true
+        {% endif %}
+
+  action:
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.linky_hc_filtre
+      data:
+        value: "{{ new }}"
+
+- id: calcul_poubelle_automatique
+  alias: "Calcul poubelle automatique"
+
+  trigger:
+    - platform: time
+      at: "00:05:00"
+
+    - platform: state
+      entity_id: input_select.poubelle_mode
+
+  condition:
+    - condition: state
+      entity_id: input_select.poubelle_mode
+      state: "Automatique"
+
+  action:
+    - service: input_select.select_option
+      target:
+        entity_id: input_select.poubelle_prochaine
+      data:
+        option: >
+          {% set semaine = now().isocalendar().week %}
+          {% if semaine % 2 == 0 %}
+            Noire
+          {% else %}
+            Jaune
+          {% endif %}
+
+  mode: single

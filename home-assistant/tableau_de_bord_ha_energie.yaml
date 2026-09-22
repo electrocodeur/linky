@@ -1,0 +1,157 @@
+title: Énergie
+path: energie
+icon: mdi:home-lightning-bolt
+type: sections
+max_columns: 4
+sections:
+  - type: grid
+    cards:
+      - type: heading
+        heading: ⚡ Résumé Linky
+        heading_style: title
+      - type: custom:mushroom-template-card
+        primary: Puissance actuelle
+        secondary: |
+          {{ states('sensor.puissance_apparente_linky') }} VA
+        icon: mdi:flash
+        icon_color: amber
+      - type: custom:mushroom-template-card
+        primary: Intensité
+        secondary: |
+          {{ states('sensor.intensite_instantanee_iinst') }} A
+        icon: mdi:current-ac
+        icon_color: blue
+      - type: custom:mushroom-template-card
+        primary: Tarif actuel
+        secondary: |
+          {{ states('sensor.periode_tarifaire_en_cours_ptec') }}
+        icon: mdi:clock-outline
+        icon_color: green
+      - type: custom:mushroom-template-card
+        primary: Puissance souscrite
+        secondary: |
+          {{ states('sensor.intensite_souscrite_isousc') }} A
+        icon: mdi:transmission-tower
+  - type: grid
+    cards:
+      - type: heading
+        heading: 📈 Puissance instantanée
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Puissance Linky - 24h
+        graph_span: 24h
+        series:
+          - entity: sensor.puissance_apparente_linky
+            name: Puissance
+            color: orange
+            type: line
+            stroke_width: 2
+  - type: grid
+    cards:
+      - type: heading
+        heading: 🔢 Index Linky
+      - type: entities
+        entities:
+          - entity: sensor.index_heures_pleines_filtre
+            name: Heures Pleines
+          - entity: sensor.index_heures_creuses_filtre
+            name: Heures Creuses
+  - type: grid
+    cards:
+      - type: heading
+        heading: 📊 Consommation
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Consommation HP / HC
+        graph_span: 30d
+        series:
+          - entity: sensor.index_heures_pleines_filtre
+            name: HP
+            color: orange
+          - entity: sensor.index_heures_creuses_filtre
+            name: HC
+            color: blue
+  - type: grid
+    cards:
+      - type: heading
+        heading: 📡 Informations compteur
+      - type: entities
+        entities:
+          - entity: sensor.tension_debut
+            name: Tension
+          - entity: sensor.option_tarifaire_optarif
+            name: Option tarifaire
+          - entity: sensor.adresse_compteur_adco
+            name: Adresse compteur
+          - entity: sensor.intensite_souscrite_isousc
+            name: Intensité souscrite
+  - type: custom:mushroom-template-card
+    primary: |
+      {{ ((states('sensor.consommation_hp_jour')|float +
+           states('sensor.consommation_hc_jour')|float) / 1000)|round(2) }} kWh
+    secondary: >
+      HP : {{ (states('sensor.consommation_hp_jour')|float / 1000)|round(2) }}
+      kWh
+
+      HC : {{ (states('sensor.consommation_hc_jour')|float / 1000)|round(2) }}
+      kWh
+    icon: mdi:lightning-bolt
+    icon_color: amber
+  - type: custom:apexcharts-card
+    header:
+      show: true
+      title: Consommation HP / HC - 30 jours
+    graph_span: 30d
+    span:
+      end: day
+    apex_config:
+      chart:
+        type: bar
+      plotOptions:
+        bar:
+          columnWidth: 60%
+    series:
+      - entity: sensor.consommation_hp_jour
+        name: Heures Pleines
+        color: orange
+        type: column
+      - entity: sensor.consommation_hc_jour
+        name: Heures Creuses
+        color: blue
+        type: column
+  - type: grid
+    cards:
+      - type: heading
+        heading_style: title
+        heading: Energie
+        icon: mdi:home-lightning-bolt
+        badges: []
+      - type: tile
+        entity: sensor.puissance_apparente_linky
+      - type: tile
+        entity: sensor.intensite_instantanee_iinst
+      - type: tile
+        entity: sensor.index_heures_pleines_corrige
+        vertical: false
+        features_position: bottom
+      - type: tile
+        entity: sensor.index_heures_creuses_corrige
+        vertical: false
+        features_position: bottom
+      - type: tile
+        entity: sensor.periode_tarifaire_en_cours_ptec
+      - type: tile
+        entity: sensor.adresse_compteur_adco
+      - type: tile
+        entity: sensor.option_tarifaire_optarif
+      - type: tile
+        entity: sensor.intensite_souscrite_isousc
+      - type: tile
+        entity: sensor.alerte_depassement_puissance_souscrite_adps
+      - type: tile
+        entity: sensor.tension_debut
+      - type: tile
+        entity: sensor.tension_fin
+cards: []

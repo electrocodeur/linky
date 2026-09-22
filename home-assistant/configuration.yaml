@@ -1,0 +1,263 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+mqtt:
+  sensor:
+    - name: "Puissance Apparente (Linky)"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/power"
+      unit_of_measurement: "VA"
+
+    - name: "Index Heures Creuses"
+      unique_id: linky_index_hc
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/hchc"
+      device_class: energy
+      state_class: total_increasing
+      unit_of_measurement: "Wh"
+
+    - name: "Index Heures Pleines"
+      unique_id: linky_index_hp
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/hchp"
+      device_class: energy
+      state_class: total_increasing
+      unit_of_measurement: "Wh"
+
+    - name: "Adresse Compteur (ADCO)"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/adco"
+
+    - name: "Option Tarifaire (OPTARIF)"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/optarif"
+
+    - name: "Intensite Souscrite (ISOUSC)"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/isousc"
+      unit_of_measurement: "A"
+
+    - name: "Periode Tarifaire en Cours (PTEC)"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/ptec"
+
+    - name: "Intensite Instantanee (IINST)"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/iinst"
+      unit_of_measurement: "A"
+
+    - name: "Alerte Depassement Puissance Souscrite (ADPS)"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/adps"
+      unit_of_measurement: "A"
+
+    - name: "Tension Debut"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/tension_debut"
+      unit_of_measurement: "V"
+
+    - name: "Tension Fin"
+      state_topic: "winky/esp-aa:bb:cc:dd:ee:ff/tension_fin"
+      unit_of_measurement: "V"
+
+template:
+  - trigger:
+      - platform: state
+        entity_id:
+          - sensor.index_heures_pleines
+          - sensor.index_heures_creuses
+
+    sensor:
+      - name: "Prochaine poubelle"
+        state: >
+          {% if is_state('input_select.poubelle_mode', 'Manuel') %}
+            {{ states('input_select.poubelle_choix_manuel') }}
+          {% else %}
+            {{ states('input_select.poubelle_prochaine') }}
+          {% endif %}
+
+      - name: "Index Heures Pleines Corrigé"
+        unique_id: linky_index_hp_corrige
+        device_class: energy
+        state_class: total_increasing
+        unit_of_measurement: "Wh"
+        state: >
+          {% set new = states('sensor.index_heures_pleines') | float(0) %}
+          {% set old = this.state | float(0) %}
+          {% set max_delta = 20000 %}
+
+          {% if old == 0 %}
+            {{ new }}
+          {% elif new == 0 %}
+            {{ old }}
+          {% elif new < old %}
+            {{ old }}
+          {% elif new > old * 1.95 and new < old * 2.05 %}
+            {{ old }}
+          {% elif (new - old) > max_delta %}
+            {{ old }}
+          {% else %}
+            {{ new }}
+          {% endif %}
+
+      - name: "Index Heures Creuses Corrigé"
+        unique_id: linky_index_hc_corrige
+        device_class: energy
+        state_class: total_increasing
+        unit_of_measurement: "Wh"
+        state: >
+          {% set new = states('sensor.index_heures_creuses') | float(0) %}
+          {% set old = this.state | float(0) %}
+          {% set max_delta = 20000 %}
+
+          {% if old == 0 %}
+            {{ new }}
+          {% elif new == 0 %}
+            {{ old }}
+          {% elif new < old %}
+            {{ old }}
+          {% elif new > old * 1.95 and new < old * 2.05 %}
+            {{ old }}
+          {% elif (new - old) > max_delta %}
+            {{ old }}
+          {% else %}
+            {{ new }}
+          {% endif %}
+        
+      - name: "Coût Jour"
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.hp_cout_jour')|float +
+              states('sensor.hc_cout_jour')|float)|round(2) }}
+
+      - name: "Coût Semaine"
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.hp_cout_semaine')|float +
+              states('sensor.hc_cout_semaine')|float)|round(2) }}
+
+      - name: "Coût Mois"
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.hp_cout_mois')|float +
+              states('sensor.hc_cout_mois')|float)|round(2) }}
+
+      - name: "Conso Jour"
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state: >
+          {{ (states('sensor.hp_jour')|float +
+              states('sensor.hc_jour')|float)|round(0) }}
+
+      - name: "Conso Semaine"
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state: >
+          {{ (states('sensor.hp_semaine')|float +
+              states('sensor.hc_semaine')|float)|round(0) }}
+
+      - name: "Conso Mois"
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state: >
+          {{ (states('sensor.hp_mois')|float +
+              states('sensor.hc_mois')|float)|round(0) }}
+    
+      - name: Index Heures Pleines Filtré
+        unique_id: linky_hp_filtre_sensor
+        device_class: energy
+        state_class: total_increasing
+        unit_of_measurement: Wh
+        state: "{{ states('input_number.linky_hp_filtre') }}"
+
+      - name: Index Heures Creuses Filtré
+        unique_id: linky_hc_filtre_sensor
+        device_class: energy
+        state_class: total_increasing
+        unit_of_measurement: Wh
+        state: "{{ states('input_number.linky_hc_filtre') }}"
+
+      - name: "Consommation HP"
+        unique_id: consommation_hp
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: >
+          {{ states('sensor.index_heures_pleines_filtre') | float(0) / 1000 }}
+
+      - name: "Consommation HC"
+        unique_id: consommation_hc
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: >
+          {{ states('sensor.index_heures_creuses_filtre') | float(0) / 1000 }}
+
+utility_meter:
+  hp_jour:
+    source: sensor.index_heures_pleines_filtre
+    cycle: daily
+
+  hc_jour:
+    source: sensor.index_heures_creuses_filtre
+    cycle: daily
+
+  hp_semaine:
+    source: sensor.index_heures_pleines_filtre
+    cycle: weekly
+
+  hc_semaine:
+    source: sensor.index_heures_creuses_filtre
+    cycle: weekly
+
+  hp_mois:
+    source: sensor.index_heures_pleines_filtre
+    cycle: monthly
+
+  hc_mois:
+    source: sensor.index_heures_creuses_filtre
+    cycle: monthly
+
+  consommation_hp_jour:
+    source: sensor.index_heures_pleines_filtre
+    cycle: daily
+
+  consommation_hc_jour:
+    source: sensor.index_heures_creuses_filtre
+    cycle: daily
+
+input_number:
+  linky_hp_filtre:
+    name: Linky HP filtré
+    min: 0
+    max: 99999999
+    step: 1
+    mode: box
+
+  linky_hc_filtre:
+    name: Linky HC filtré
+    min: 0
+    max: 99999999
+    step: 1
+    mode: box
+
+input_select:
+  poubelle_mode:
+    name: Mode poubelle
+    options:
+      - Automatique
+      - Manuel
+    icon: mdi:calendar-sync
+
+  poubelle_choix_manuel:
+    name: Poubelle manuelle
+    options:
+      - Jaune
+      - Noire
+    icon: mdi:trash-can
+
+  poubelle_prochaine:
+    name: Prochaine poubelle
+    options:
+      - Jaune
+      - Noire
+    icon: mdi:trash-can-outline
