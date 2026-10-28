@@ -1,0 +1,212 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+mqtt:
+  sensor:
+    # ---------- Puissance et intensité ----------
+    - name: "Puissance Apparente Linky"
+      unique_id: linky_puissance_apparente
+      state_topic: "winky/linky/power"
+      device_class: apparent_power
+      state_class: measurement
+      unit_of_measurement: "VA"
+
+    - name: "Intensité Instantanée Linky"
+      unique_id: linky_intensite_instantanee
+      state_topic: "winky/linky/iinst"
+      device_class: current
+      state_class: measurement
+      unit_of_measurement: "A"
+
+    - name: "Intensité Souscrite Linky"
+      unique_id: linky_intensite_souscrite
+      state_topic: "winky/linky/isousc"
+      device_class: current
+      state_class: measurement
+      unit_of_measurement: "A"
+
+    - name: "Alerte Dépassement Linky"
+      unique_id: linky_alerte_depassement
+      state_topic: "winky/linky/adps"
+      device_class: current
+      state_class: measurement
+      unit_of_measurement: "A"
+
+    # ---------- Index d'énergie ----------
+    - name: "Index Base Linky"
+      unique_id: linky_index_base
+      state_topic: "winky/linky/base"
+      device_class: energy
+      state_class: total_increasing
+      unit_of_measurement: "Wh"
+
+    # ---------- Contrat et tarif ----------
+    - name: "Adresse Compteur Linky"
+      unique_id: linky_adco
+      state_topic: "winky/linky/adco"
+
+    - name: "Option Tarifaire Linky"
+      unique_id: linky_option_tarifaire
+      state_topic: "winky/linky/optarif"
+
+    - name: "Période Tarifaire Linky"
+      unique_id: linky_periode_tarifaire
+      state_topic: "winky/linky/ptec"
+
+    # ---------- Alimentation de l'ESP ----------
+    - name: "Tension Début Linky"
+      unique_id: linky_tension_debut
+      state_topic: "winky/linky/tension_debut"
+      device_class: voltage
+      state_class: measurement
+      unit_of_measurement: "V"
+
+    - name: "Tension Fin Linky"
+      unique_id: linky_tension_fin
+      state_topic: "winky/linky/tension_fin"
+      device_class: voltage
+      state_class: measurement
+      unit_of_measurement: "V"
+
+# Pic de puissance calculé par Home Assistant (le compteur historique ne le fournit pas)
+sensor:
+  - platform: statistics
+    name: "Puissance Max 24h Linky"
+    unique_id: linky_puissance_max_24h
+    entity_id: sensor.puissance_apparente_linky
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+
+template:
+  - sensor:
+      - name: "Puissance de Coupure Linky"
+        unique_id: linky_pcoup_estimee
+        unit_of_measurement: "kVA"
+        state: >
+          {{ (states('sensor.intensite_souscrite_linky') | float(0) * 200 / 1000) | round(0) }}
+
+      - name: "Index Total Consommé Linky"
+        unique_id: linky_index_total_calcule
+        device_class: energy
+        state_class: total_increasing
+        unit_of_measurement: "Wh"
+        state: "{{ states('sensor.index_base_filtre') | float(0) }}"
+
+      - name: "Prochaine poubelle"
+        state: >
+          {% if is_state('input_select.poubelle_mode', 'Manuel') %}
+            {{ states('input_select.poubelle_choix_manuel') }}
+          {% else %}
+            {{ states('input_select.poubelle_prochaine') }}
+          {% endif %}
+
+      - name: "Coût Jour"
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.base_jour') | float(0) / 1000
+              * states('input_number.linky_prix_kwh') | float(0)) | round(2) }}
+
+      - name: "Coût Semaine"
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.base_semaine') | float(0) / 1000
+              * states('input_number.linky_prix_kwh') | float(0)) | round(2) }}
+
+      - name: "Coût Mois"
+        unit_of_measurement: "€"
+        state: >
+          {{ (states('sensor.base_mois') | float(0) / 1000
+              * states('input_number.linky_prix_kwh') | float(0)) | round(2) }}
+
+      - name: "Conso Jour"
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state: "{{ states('sensor.base_jour') | float(0) | round(0) }}"
+
+      - name: "Conso Semaine"
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state: "{{ states('sensor.base_semaine') | float(0) | round(0) }}"
+
+      - name: "Conso Mois"
+        unit_of_measurement: "Wh"
+        device_class: energy
+        state: "{{ states('sensor.base_mois') | float(0) | round(0) }}"
+
+      - name: "Index Base Filtré"
+        unique_id: linky_base_filtre_sensor
+        device_class: energy
+        state_class: total_increasing
+        unit_of_measurement: "Wh"
+        state: "{{ states('input_number.linky_base_filtre') | float(0) }}"
+
+      - name: "Consommation Base"
+        unique_id: consommation_base
+        device_class: energy
+        state_class: total_increasing
+        unit_of_measurement: "kWh"
+        state: "{{ states('sensor.index_base_filtre') | float(0) / 1000 }}"
+
+utility_meter:
+  base_jour:
+    source: sensor.index_base_filtre
+    cycle: daily
+
+  base_semaine:
+    source: sensor.index_base_filtre
+    cycle: weekly
+
+  base_mois:
+    source: sensor.index_base_filtre
+    cycle: monthly
+
+  consommation_base_jour:
+    source: sensor.index_base_filtre
+    cycle: daily
+
+input_number:
+  linky_base_filtre:
+    name: Linky Base filtré
+    min: 0
+    max: 99999999
+    step: 1
+    mode: box
+
+  linky_prix_kwh:
+    name: Prix du kWh Base
+    min: 0
+    max: 1
+    step: 0.0001
+    unit_of_measurement: "€/kWh"
+    mode: box
+
+input_select:
+  poubelle_mode:
+    name: Mode poubelle
+    options:
+      - Automatique
+      - Manuel
+    icon: mdi:calendar-sync
+
+  poubelle_choix_manuel:
+    name: Poubelle manuelle
+    options:
+      - Jaune
+      - Noire
+    icon: mdi:trash-can
+
+  poubelle_prochaine:
+    name: Prochaine poubelle
+    options:
+      - Jaune
+      - Noire
+    icon: mdi:trash-can-outline
