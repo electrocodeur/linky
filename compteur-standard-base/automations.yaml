@@ -1,0 +1,110 @@
+- id: alerte_puissance_linky
+  alias: "Alerte puissance Linky"
+  description: "Alerte dépassement puissance souscrite"
+
+  trigger:
+    - platform: template
+      value_template: >
+        {% set puissance = states('sensor.puissance_apparente_linky') | float(0) %}
+        {% set seuil = states('sensor.puissance_de_coupure_linky') | float(0) * 1000 * 0.88889 %}
+
+        {{ seuil > 0 and puissance > seuil }}
+
+  condition: []
+
+  action:
+    - service: notify.mobile_app_redmi_note_9_pro
+      data:
+        title: "⚠️ Alerte Linky"
+        message: >
+          Dépassement de puissance proche.
+
+          Puissance actuelle :
+          {{ states('sensor.puissance_apparente_linky') }} VA
+
+          Seuil d'alerte (88,889 % de la puissance de coupure) :
+          {{ (states('sensor.puissance_de_coupure_linky') | float(0) * 1000 * 0.88889) | round(0) }} VA
+
+          Puissance de coupure :
+          {{ (states('sensor.puissance_de_coupure_linky') | float(0) * 1000) | round(0) }} VA
+
+    - service: notify.mobile_app_iphone_de_...
+      data:
+        title: "⚠️ Alerte Linky"
+        message: >
+          Dépassement de puissance proche.
+
+          Puissance actuelle :
+          {{ states('sensor.puissance_apparente_linky') }} VA
+
+          Seuil d'alerte (88,889 % de la puissance de coupure) :
+          {{ (states('sensor.puissance_de_coupure_linky') | float(0) * 1000 * 0.88889) | round(0) }} VA
+
+          Puissance de coupure :
+          {{ (states('sensor.puissance_de_coupure_linky') | float(0) * 1000) | round(0) }} VA
+
+  mode: single
+
+
+
+- id: linky_base_filter
+  alias: "Linky - Filtre Base"
+  mode: restart
+
+  trigger:
+    - platform: state
+      entity_id: sensor.index_base_linky
+
+  condition:
+    - condition: template
+      value_template: >
+        {{ trigger.to_state is not none
+           and is_number(trigger.to_state.state)
+           and (trigger.to_state.state | float) > 0 }}
+
+  action:
+    - variables:
+        nouveau: "{{ trigger.to_state.state | float }}"
+        ancien: "{{ states('input_number.linky_base_filtre') | float(0) }}"
+
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: >
+                {{ ancien == 0 or (nouveau >= ancien and (nouveau - ancien) <= 20000) }}
+          sequence:
+            - service: input_number.set_value
+              target:
+                entity_id: input_number.linky_base_filtre
+              data:
+                value: "{{ nouveau }}"
+
+- id: calcul_poubelle_automatique
+  alias: "Calcul poubelle automatique"
+
+  trigger:
+    - platform: time
+      at: "00:05:00"
+
+    - platform: state
+      entity_id: input_select.poubelle_mode
+
+  condition:
+    - condition: state
+      entity_id: input_select.poubelle_mode
+      state: "Automatique"
+
+  action:
+    - service: input_select.select_option
+      target:
+        entity_id: input_select.poubelle_prochaine
+      data:
+        option: >
+          {% set semaine = now().isocalendar().week %}
+          {% if semaine % 2 == 0 %}
+            Noire
+          {% else %}
+            Jaune
+          {% endif %}
+
+  mode: single
