@@ -16,7 +16,7 @@ Le but est de proposer une solution simple, fiable et facilement intégrable dan
 
 Le module est également disponible à l'achat pour les personnes qui souhaitent profiter de cette solution sans avoir à fabriquer elles-mêmes le circuit électronique.
 
-➡️ **Acheter le module :** https://www.leboncoin.fr/ad/telephones_objets_connectes/3296448571
+➡️ **Acheter le module :** https://www.leboncoin.fr/ad/telephones_objets_connectes/3313871347
 
 ---
 
