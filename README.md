@@ -70,9 +70,10 @@ Un mauvais choix peut entraîner une lecture incorrecte de certaines données ou
 
 ## Présentation vidéo
 
-Une vidéo présentant le projet est disponible sur YouTube :
+Deux vidéos présentant le projet sont disponibles sur YouTube :
 
 ➡️ **https://youtu.be/GOWZHOOZNiU**
+➡️ **https://youtu.be/eP86TbCX5Ok**
 
 ---
 
