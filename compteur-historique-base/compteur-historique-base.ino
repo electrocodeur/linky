@@ -16,10 +16,10 @@ const float TENSION_BASSE = 3.4;
 const unsigned long SOMMEIL_COURT_US = 15000000UL;   // 15 s
 const unsigned long SOMMEIL_LONG_US = 180000000UL;    // 3 min
 const unsigned long SOMMEIL_ECHEC_RESEAU_US = 30000000UL; //30 s
-const uint8_t WIFI_MAX_TENTATIVES = 10;
-const uint16_t WIFI_ATTENTE_MS = 500;
-const uint8_t MQTT_MAX_TENTATIVES = 8;
-const uint16_t MQTT_ATTENTE_MS = 750;
+const uint8_t WIFI_MAX_TENTATIVES = 15;
+const uint16_t WIFI_ATTENTE_MS = 1000;
+const uint8_t MQTT_MAX_TENTATIVES = 15;
+const uint16_t MQTT_ATTENTE_MS = 1000;
 float tensionDemarrage = 0.0;
 
 int ISOUSC;               // intensité souscrite  
