@@ -13,10 +13,10 @@ const float RAPPORT = 5.28;
 const float TENSION_SEUIL_DEMARRAGE = 3.5;//3.5
 const float TENSION_BASSE = 3.4;//3.4
 const unsigned long SOMMEIL_ECHEC_RESEAU_US = 30000000UL;
-const uint8_t WIFI_MAX_TENTATIVES = 10;//10
-const uint16_t WIFI_ATTENTE_MS = 500;
-const uint8_t MQTT_MAX_TENTATIVES = 8;//8
-const uint16_t MQTT_ATTENTE_MS = 750;
+const uint8_t WIFI_MAX_TENTATIVES = 15;//10
+const uint16_t WIFI_ATTENTE_MS = 1000;
+const uint8_t MQTT_MAX_TENTATIVES = 15;//8
+const uint16_t MQTT_ATTENTE_MS = 1000;
 float tensionDemarrage = 0.0;
 
 // ---- Valeurs TIC (-1 = non reçu, donc non publié) ----
